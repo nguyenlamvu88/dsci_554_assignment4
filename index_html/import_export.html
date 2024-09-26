@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import and Export Line Chart with D3.js</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Custom CSS for chart styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 140px;
+            height: auto;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none; /* Important: prevents tooltips from blocking mouse events */
+            opacity: 0; /* Start with invisible */
+        }
+        .legend {
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center my-4">Imports and Exports Over Time (Norway vs. Sweden)</h2>
+    <div class="chart" id="line-chart"></div>
+</div>
+
+<!-- D3.js Library -->
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+    // Updated data for the chart (values still in millions)
+    const data = [
+        { year: 1995, country: 'Norway', imports: 32706, exports: 41740 },
+        { year: 2005, country: 'Norway', imports: 55488, exports: 103759 },
+        { year: 2010, country: 'Norway', imports: 77330, exports: 130657 },
+        { year: 2015, country: 'Norway', imports: 76399, exports: 103785 },
+        { year: 2020, country: 'Norway', imports: 81624, exports: 82749 },
+        { year: 2021, country: 'Norway', imports: 99253, exports: 174514 },
+        { year: 2022, country: 'Norway', imports: 107197, exports: 273734 },
+        { year: 1995, country: 'Sweden', imports: 61647, exports: 77436 },
+        { year: 2005, country: 'Sweden', imports: 111351, exports: 130264 },
+        { year: 2010, country: 'Sweden', imports: 148788, exports: 158411 },
+        { year: 2015, country: 'Sweden', imports: 138361, exports: 140001 },
+        { year: 2020, country: 'Sweden', imports: 149436, exports: 154936 },
+        { year: 2021, country: 'Sweden', imports: 187320, exports: 189635 },
+        { year: 2022, country: 'Sweden', imports: 202093, exports: 197575 }
+    ];
+
+    // Set dimensions and margins for the chart
+    const margin = { top: 20, right: 30, bottom: 50, left: 80 },
+        width = 900 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // Create an SVG element and append it to the chart div
+    const svg = d3.select("#line-chart")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Define x and y scales
+    const x = d3.scaleLinear()
+        .domain(d3.extent(data, d => d.year))
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => Math.max(d.imports, d.exports)) / 1000]) // Convert to billions
+        .nice()
+        .range([height, 0]);
+
+    // Define line generators
+    const lineImports = d3.line()
+        .x(d => x(d.year))
+        .y(d => y(d.imports / 1000)) // Convert to billions
+        .curve(d3.curveMonotoneX);
+
+    const lineExports = d3.line()
+        .x(d => x(d.year))
+        .y(d => y(d.exports / 1000)) // Convert to billions
+        .curve(d3.curveMonotoneX);
+
+    // Filter data for Norway and Sweden
+    const norwayData = data.filter(d => d.country === 'Norway');
+    const swedenData = data.filter(d => d.country === 'Sweden');
+
+    // Add the imports line for Norway
+    svg.append("path")
+        .datum(norwayData)
+        .attr("class", "line")
+        .attr("d", lineImports)
+        .style("stroke", "#1f77b4")
+        .style("stroke-width", "2px")
+        .style("fill", "none")
+        .attr("id", "norway-imports");
+
+    // Add dots on imports line for Norway
+    svg.selectAll(".dot-imports-norway")
+        .data(norwayData)
+        .enter().append("circle")
+        .attr("class", "dot-imports-norway")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.imports / 1000))
+        .attr("r", 4)
+        .style("fill", "#1f77b4");
+
+    // Add the exports line for Norway
+    svg.append("path")
+        .datum(norwayData)
+        .attr("class", "line")
+        .attr("d", lineExports)
+        .style("stroke", "#aec7e8")
+        .style("stroke-width", "2px")
+        .style("fill", "none")
+        .attr("id", "norway-exports");
+
+    // Add dots on exports line for Norway
+    svg.selectAll(".dot-exports-norway")
+        .data(norwayData)
+        .enter().append("circle")
+        .attr("class", "dot-exports-norway")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.exports / 1000))
+        .attr("r", 4)
+        .style("fill", "#aec7e8");
+
+    // Add the imports line for Sweden
+    svg.append("path")
+        .datum(swedenData)
+        .attr("class", "line")
+        .attr("d", lineImports)
+        .style("stroke", "#ff7f0e")
+        .style("stroke-width", "2px")
+        .style("fill", "none")
+        .attr("id", "sweden-imports");
+
+    // Add dots on imports line for Sweden
+    svg.selectAll(".dot-imports-sweden")
+        .data(swedenData)
+        .enter().append("circle")
+        .attr("class", "dot-imports-sweden")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.imports / 1000))
+        .attr("r", 4)
+        .style("fill", "#ff7f0e");
+
+    // Add the exports line for Sweden
+    svg.append("path")
+        .datum(swedenData)
+        .attr("class", "line")
+        .attr("d", lineExports)
+        .style("stroke", "#ffbb78")
+        .style("stroke-width", "2px")
+        .style("fill", "none")
+        .attr("id", "sweden-exports");
+
+    // Add dots on exports line for Sweden
+    svg.selectAll(".dot-exports-sweden")
+        .data(swedenData)
+        .enter().append("circle")
+        .attr("class", "dot-exports-sweden")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.exports / 1000))
+        .attr("r", 4)
+                .style("fill", "#ffbb78");
+
+    // Add x-axis
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
+
+    // Add y-axis with billions format
+    svg.append("g")
+        .call(d3.axisLeft(y).tickFormat(d => d + "B")); // Add 'B' to indicate billions
+
+    // Add legend
+    svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${width / 2 - 80},${-margin.top + 30})`) // Fine-tuned position
+        .selectAll("text")
+        .data(["Norway Imports", "Norway Exports", "Sweden Imports", "Sweden Exports"])
+        .enter()
+        .append("text")
+        .attr("x", 0)
+        .attr("y", (d, i) => i * 20)
+        .text(d => d)
+        .style("fill", (d, i) => ["#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78"][i])
+        .style("font-size", "14px"); // Slightly larger for readability
+
+    // Add y-axis label to indicate billions
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left + 20) // Adjusted to move label outward
+        .attr("x", 0 - height / 2)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "bold") // Bold for emphasis
+        .text("Trade Value (billions USD)");
+
+    // Create tooltip element and add to the body
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    // Add tooltip functionality for dots with specific import/export information
+    svg.selectAll("circle")
+        .on("mouseover", function(event, d) {
+            const formatBillions = d3.format(".2f"); // Format to two decimal places
+            tooltip.transition().duration(200).style("opacity", .9);
+            tooltip.html(`Year: ${d.year}<br>Imports: ${formatBillions(d.imports / 1000)}B USD<br>Exports: ${formatBillions(d.exports / 1000)}B USD`) // Divide by 1000 to convert millions to billions
+                .style("left", (event.pageX + 5) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            tooltip.transition().duration(500).style("opacity", 0);
+        });
+
+</script>
+</body>
+</html>
